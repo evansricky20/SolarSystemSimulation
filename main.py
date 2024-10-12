@@ -1,150 +1,187 @@
-import pygame
-import pygame_gui
-from pygame.locals import *
-import OpenGL
+import sys
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtOpenGL import *
+from PyQt5.QtWidgets import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import math
 import sys
-
-
-# def Sphere(radius):
-#     quadric = gluNewQuadric()
-#     gluSphere(quadric, radius, 32, 32)
-
+import math
 
 
 class Sphere:
     instances = []
 
-    def __init__(self, name, radius, orbit_radius, orbit_speed, rotation_speed):
+    def __init__(self, name, radius, orbit_radius, orbit_speed, rotation_speed, moons=None):
         self.name = name
         self.radius = radius
+        self.orig_rad = radius
         self.orbit_radius = orbit_radius
         self.orbit_speed = orbit_speed
+        self.orig_orbit_speed = orbit_speed
         self.rotation = rotation_speed
+        self.moons = moons
         Sphere.instances.append(self)
         self.moons = []
 
-    def __str__(self):
-        return f"{self.name}: {self.radius}"
-
-    def render(self):
-        time = pygame.time.get_ticks() * 0.001
+    def render(self, time):
 
         glPushMatrix()
         x_orbit = math.cos(time * self.orbit_speed)
         y_orbit = math.sin(time * self.orbit_speed)
         glTranslatef(x_orbit * self.orbit_radius, y_orbit * self.orbit_radius, 0)
         glRotatef(time * self.rotation, 0, 0, 1)
-        quadric = gluNewQuadric()
-        gluSphere(quadric, self.radius, 32, 32)
-
-        glPushMatrix()
-        x_orbit = math.cos(time * 4)
-        y_orbit = math.sin(time * 4)
-        glTranslatef(x_orbit * 2, y_orbit * 2, 0)
-        glRotatef(time * 1, 0, 0, 1)
-        quadric = gluNewQuadric()
-        gluSphere(quadric, 0.25, 32, 32)
+        sphere = gluNewQuadric()
+        gluSphere(sphere, self.radius, 32, 32)
 
         glPopMatrix()
-        glPopMatrix()
 
 
-def main():
-    pygame.init()
-    display = (800, 600)
-    screen = pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    manager = pygame_gui.UIManager((800, 600))
-    clock = pygame.time.Clock()
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.resize(800, 600)
+        self.setWindowTitle("Computer Graphics - Project 1")
 
-    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    glTranslatef(0.0, 0.0, -30)
+        self.initGUI()
 
-    button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 550), (100, 50)),
-                                          text='Press Me',
-                                          manager=manager)
+    def initGUI(self):
+        central_widget = QWidget(self)
+        gui_layout = QVBoxLayout(central_widget)
+        central_widget.setLayout(gui_layout)
 
-    glClearColor(0, 0, 0, 1)
-    while True:
-        time_delta = clock.tick(60) / 1000.0
+        self.setCentralWidget(central_widget)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+        self.glWidget = GLWidget(self)
+        gui_layout.addWidget(self.glWidget)
 
-            manager.process_events(event)
+        planetlist = QComboBox()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    quit()
-                if event.key == pygame.K_TAB:
-                    print("Tab pressed")  # use for menu
-                if event.key == pygame.K_KP_PLUS:
-                    glTranslatef(0, 0, 1.0)
-                if event.key == pygame.K_KP_MINUS:
-                    glTranslatef(0, 0, -1.0)
-                if event.key == pygame.K_1:
-                    # print all objects
-                    for sphere in Sphere.instances:
-                        print(sphere)
+        # Size slider label
+        size_label = QLabel(self)
+        size_label.setText("Adjust Size:")
+        size_label.setFont(QFont("Arial", 11))
+        size_label.setFixedSize(200, 20)
 
-        manager.update(time_delta)
+        # Size slider creation
+        self.size_slider = QSlider(Qt.Horizontal, self)
+        self.size_slider.setTickPosition(QSlider.TicksBelow)
+        self.size_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.size_slider.setSingleStep(1)  # Each tick step is 1
+        self.size_slider.setValue(100)
+        self.size_slider.setMinimum(0)
+        self.size_slider.setMaximum(200)
+        self.size_slider.valueChanged.connect(self.glWidget.changeSize)
 
+        # Speed slider label
+        speed_label = QLabel(self)
+        speed_label.setText("Adjust Speed:")
+        speed_label.setFont(QFont("Arial", 11))
+        speed_label.setFixedSize(200, 20)
+
+        # Speed slider creation
+        self.speed_slider = QSlider(Qt.Horizontal, self)
+        self.speed_slider.setTickPosition(QSlider.TicksBelow)
+        self.speed_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.speed_slider.setSingleStep(1)  # Each tick step is 1
+        self.speed_slider.setValue(100)
+        self.speed_slider.setMinimum(0)
+        self.speed_slider.setMaximum(200)
+        self.speed_slider.valueChanged.connect(self.glWidget.changeOrbit)
+
+        # Rotation slider label
+        rotate_label = QLabel(self)
+        rotate_label.setText("Adjust Rotation:")
+        rotate_label.setFont(QFont("Arial", 11))
+        rotate_label.setFixedSize(200, 20)
+
+        # Rotation slider creation
+        self.rotate_slider = QSlider(Qt.Horizontal, self)
+        self.rotate_slider.setTickPosition(QSlider.TicksBelow)
+        self.rotate_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.rotate_slider.setSingleStep(1)  # Each tick step is 1
+
+        # Using addWidget to add labels and sliders to layout
+        gui_layout.addWidget(size_label)
+        gui_layout.addWidget(self.size_slider)
+        gui_layout.addWidget(speed_label)
+        gui_layout.addWidget(self.speed_slider)
+        gui_layout.addWidget(rotate_label)
+        gui_layout.addWidget(self.rotate_slider)
+
+
+class GLWidget(QGLWidget):
+    def __init__(self, parent=None):
+        self.parent = parent
+        QGLWidget.__init__(self, parent)
+
+        self.timer = QTimer(self)
+        self.elapsed_timer = QElapsedTimer()  # time to track time passed for continuous translation
+        self.elapsed_timer.start() # start timer
+
+        self.timer.timeout.connect(self.update) # timer
+        self.timer.start(16)
+
+        self.planet1 =Sphere("planet1", 2, 4, 2, 1)
+        self.planet2 = Sphere("planet2", 1.5, 8, 1, 1, 0)
+
+    def initializeGL(self):
+        self.qglClearColor(QColor(0, 0, 0))
+        glEnable(GL_DEPTH_TEST)
+
+
+    def resizeGL(self, width, height):
+        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        aspect = width / float(height)
+
+        gluPerspective(90.0, aspect, 1.0, 100.0)  # (field of view, aspect ratio, z near, z far)
+        glMatrixMode(GL_MODELVIEW)
+
+    def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glLoadIdentity()
+
+        # Camera setup
+        gluLookAt(0.0, 0.0, 20.0,  # Eye position (camera)
+                  0.0, 0.0, 0.0,  # Look at position (center of the scene)
+                  0.0, 1.0, 0.0)
+
+        elapsed_time = self.elapsed_timer.elapsed() / 1000.0
 
         # Sun
         glColor3f(1, 1, 0)
         sun = Sphere("sun", 1.5, 0, 0, 1)  # (self, name, radius, orbit_radius, orbit_speed, rotation_speed)
-        sun.render()
+        sun.render(elapsed_time)
 
         # Planet 1
         glColor3f(0, 0, 1)
-        planet1 = Sphere("planet1", 1.0, 4, 1.5, 1)
-        planet1.render()
-
-
-        # Planet 1 moon
-        # glPushMatrix()
-        # orbit_radius = 2
-        # x_orbit = math.cos(time * 4)
-        # y_orbit = math.sin(time * 4)
-        # glTranslatef(x_orbit * orbit_radius, y_orbit * orbit_radius, 0)
-        # glRotatef(time * 30, 0, 0, 1)
-        # glColor3f(1, 1, 1)
-        # planet1moon = Sphere("planet1moon", 0.25)
-        # planet1moon.render()
-        # glPopMatrix()
-        # glPopMatrix()
+        # planet1 = Sphere("planet1", 1.0, 4, 2, 1, 1)
+        # planet1.render(elapsed_time)
+        self.planet1.render(elapsed_time)
 
         # Planet 2
         glColor3f(0, 1, 0)
-        planet2 = Sphere("planet2", 0.5, 7, 1, 1)
-        planet2.render()
+        # planet2 = Sphere("planet2", 1.5, 8, 1, 1, 0)
+        self.planet2.render(elapsed_time)
 
-        # steroid 1
-        glColor3f(1, 0, 1)
-        asteroid1 = Sphere("asteroid1", 0.2, 5, 2, 1)
-        asteroid1.render()
+    def changeSize(self, size):
+        self.planet1.radius = self.planet1.orig_rad * (size / 100) # Dividing by 100 to conform to coordinate system
+        self.update()
 
-        # Planet 3
-        glColor3f(0, 1, 1)
-        planet3 = Sphere("planet3", 0.7, 9, 0.8, 1)
-        planet3.render()
+    def changeOrbit(self, orbit):
+        self.planet1.orbit_speed = self.planet1.orig_orbit_speed * (orbit / 100)
+        self.update()
 
-        # Planet 4
-        glColor3f(1, 1, 1)
-        planet4 = Sphere("planet4", 1.75, 11, 0.2, 1)
-        planet4.render()
-
-        glDisable(GL_DEPTH_TEST)
-        manager.draw_ui(screen)
-        glEnable(GL_DEPTH_TEST)
-
-        pygame.display.flip()
-        pygame.time.wait(10)
+    def changeRotation(self, rotation):
+        self.planet1.rotation = rotation
+        self.update()
 
 
-main()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec_())
