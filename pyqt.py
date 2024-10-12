@@ -41,10 +41,61 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
         self.setWindowTitle("Computer Graphics - Project 1")
 
-        glWidget = GLWidget(self)
-        self.setCentralWidget(glWidget)
+        self.initGUI()
 
-        timer = QTimer(self)
+    def initGUI(self):
+        central_widget = QWidget(self)
+        gui_layout = QVBoxLayout(central_widget)
+        self.setCentralWidget(central_widget)
+
+        self.glWidget = GLWidget(self)
+        gui_layout.addWidget(self.glWidget)
+
+        planetlist = QComboBox()
+
+        # Size slider label
+        size_label = QLabel(self)
+        size_label.setText("Adjust Size:")
+        size_label.setFont(QFont("Arial", 11))
+        size_label.setFixedSize(200, 20)
+
+        # Size slider creation
+        self.size_slider = QSlider(Qt.Horizontal, self)
+        self.size_slider.setTickPosition(QSlider.TicksBelow)
+        self.size_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.size_slider.setSingleStep(1)  # Each tick step is 1
+
+        # Speed slider label
+        speed_label = QLabel(self)
+        speed_label.setText("Adjust Speed:")
+        speed_label.setFont(QFont("Arial", 11))
+        speed_label.setFixedSize(200, 20)
+
+        # Speed slider creation
+        self.speed_slider = QSlider(Qt.Horizontal, self)
+        self.speed_slider.setTickPosition(QSlider.TicksBelow)
+        self.speed_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.speed_slider.setSingleStep(1)  # Each tick step is 1
+
+        # Rotation slider label
+        rotate_label = QLabel(self)
+        rotate_label.setText("Adjust Rotation:")
+        rotate_label.setFont(QFont("Arial", 11))
+        rotate_label.setFixedSize(200, 20)
+
+        # Rotation slider creation
+        self.rotate_slider = QSlider(Qt.Horizontal, self)
+        self.rotate_slider.setTickPosition(QSlider.TicksBelow)
+        self.rotate_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.rotate_slider.setSingleStep(1)  # Each tick step is 1
+
+        # Using addWidget to add labels and sliders to layout
+        gui_layout.addWidget(size_label)
+        gui_layout.addWidget(self.size_slider)
+        gui_layout.addWidget(speed_label)
+        gui_layout.addWidget(self.speed_slider)
+        gui_layout.addWidget(rotate_label)
+        gui_layout.addWidget(self.rotate_slider)
 
 
 class GLWidget(QGLWidget):
@@ -53,19 +104,19 @@ class GLWidget(QGLWidget):
         QGLWidget.__init__(self, parent)
 
         self.timer = QTimer(self)
-        self.elapsed_timer = QElapsedTimer()  # Timer to track continuous time
+        self.elapsed_timer = QElapsedTimer()  # time to track time passed for continuous translation
 
-        # Start the elapsed timer
-        self.elapsed_timer.start()
+        self.elapsed_timer.start() # start timer
 
-        # Set up the timer to update every 16ms (~60fps)
-        self.timer.timeout.connect(self.update)
+        self.timer.timeout.connect(self.update) # timer
         self.timer.start(16)
+
+
+
 
     def initializeGL(self):
         self.qglClearColor(QColor(0, 0, 0))
         glEnable(GL_DEPTH_TEST)
-
 
 
     def resizeGL(self, width, height):
@@ -83,20 +134,26 @@ class GLWidget(QGLWidget):
         glLoadIdentity()
 
         # Camera setup
-        gluLookAt(0.0, 0.0, 10.0,  # Eye position (camera)
+        gluLookAt(0.0, 0.0, 20.0,  # Eye position (camera)
                   0.0, 0.0, 0.0,  # Look at position (center of the scene)
                   0.0, 1.0, 0.0)
 
         elapsed_time = self.elapsed_timer.elapsed() / 1000.0
 
+        # Sun
         glColor3f(1, 1, 0)
         sun = Sphere("sun", 1.5, 0, 0, 1)  # (self, name, radius, orbit_radius, orbit_speed, rotation_speed)
         sun.render(elapsed_time)
 
         # Planet 1
         glColor3f(0, 0, 1)
-        planet1 = Sphere("planet1", 1.0, 4, 1.5, 1, 1)
+        planet1 = Sphere("planet1", 1.0, 4, 2, 1, 1)
         planet1.render(elapsed_time)
+
+        # Planet 2
+        glColor3f(0, 1, 0)
+        planet2 = Sphere("planet1", 1.5, 8, 1, 1, 0)
+        planet2.render(elapsed_time)
 
 
 if __name__ == '__main__':
