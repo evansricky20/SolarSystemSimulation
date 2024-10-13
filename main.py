@@ -10,18 +10,25 @@ import math
 
 
 class Sphere:
-    instances = []
+    sphereList = []
 
     def __init__(self, name, radius, orbit_radius, orbit_speed, rotation_speed, moons=None):
         self.name = name
+
         self.radius = radius
         self.orig_rad = radius
+
         self.orbit_radius = orbit_radius
+        self.orig_orbit_radius = orbit_radius
+
         self.orbit_speed = orbit_speed
         self.orig_orbit_speed = orbit_speed
+
         self.rotation = rotation_speed
+        self.orig_rotation = rotation_speed
+
         self.moons = moons
-        Sphere.instances.append(self)
+        Sphere.sphereList.append(self)
         self.moons = []
 
     def render(self, time):
@@ -40,7 +47,7 @@ class Sphere:
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        self.resize(800, 600)
+        self.resize(800, 900)
         self.setWindowTitle("Computer Graphics - Project 1")
 
         self.initGUI()
@@ -55,7 +62,35 @@ class MainWindow(QMainWindow):
         self.glWidget = GLWidget(self)
         gui_layout.addWidget(self.glWidget)
 
+        buttonlayout = QHBoxLayout()
+
         planetlist = QComboBox()
+        planetlist.addItems([sphere.name for sphere in Sphere.sphereList])
+        planetlist.currentIndexChanged.connect(self.glWidget.selectPlanet)
+        planetlist.setFixedSize(200, 20)
+
+        # Button to add planet to system
+        addplanet = QPushButton("Add Planet")
+        addplanet.setFixedSize(100, 20)
+        #addplanet.clicked.connect(self.newPlanet)
+
+        # Text box to enter name of planet to add
+        textbox = QLineEdit(self)
+        textbox.setFixedSize(100, 20)
+
+        # Button to remove planet from system
+        removeplanet = QPushButton("Remove Planet")
+        removeplanet.setFixedSize(100, 20)
+        # addplanet.clicked.connect(self.deletePlanet)
+
+        # Adding buttons and boxcombo to buttonlayout
+        buttonlayout.addWidget(planetlist)
+        buttonlayout.addWidget(textbox)
+        buttonlayout.addWidget(addplanet)
+        buttonlayout.addWidget(removeplanet)
+
+        # Adding button layout to the main gui layout
+        gui_layout.addLayout(buttonlayout)
 
         # Size slider label
         size_label = QLabel(self)
@@ -73,6 +108,7 @@ class MainWindow(QMainWindow):
         self.size_slider.setMaximum(200)
         self.size_slider.valueChanged.connect(self.glWidget.changeSize)
 
+
         # Speed slider label
         speed_label = QLabel(self)
         speed_label.setText("Adjust Speed:")
@@ -82,12 +118,30 @@ class MainWindow(QMainWindow):
         # Speed slider creation
         self.speed_slider = QSlider(Qt.Horizontal, self)
         self.speed_slider.setTickPosition(QSlider.TicksBelow)
-        self.speed_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
+        self.speed_slider.setTickInterval(100)  # Setting slider to have interval of every 10 ticks
         self.speed_slider.setSingleStep(1)  # Each tick step is 1
-        self.speed_slider.setValue(100)
-        self.speed_slider.setMinimum(0)
-        self.speed_slider.setMaximum(200)
+        self.speed_slider.setValue(0)
+        self.speed_slider.setMinimum(-1000)
+        self.speed_slider.setMaximum(1000)
         self.speed_slider.valueChanged.connect(self.glWidget.changeOrbit)
+
+
+        # Orbit size slider creation
+        self.orbit_radius_slider = QSlider(Qt.Horizontal, self)
+        self.orbit_radius_slider.setTickPosition(QSlider.TicksBelow)
+        self.orbit_radius_slider.setTickInterval(100)  # Setting slider to have interval of every 10 ticks
+        self.orbit_radius_slider.setSingleStep(1)  # Each tick step is 1
+        self.orbit_radius_slider.setValue(300)
+        self.orbit_radius_slider.setMinimum(300)
+        self.orbit_radius_slider.setMaximum(2000)
+        self.orbit_radius_slider.valueChanged.connect(self.glWidget.changeOrbitRadius)
+
+        # Orbit size slider label
+        orbit_radius_label = QLabel(self)
+        orbit_radius_label.setText("Adjust Orbit:")
+        orbit_radius_label.setFont(QFont("Arial", 11))
+        orbit_radius_label.setFixedSize(200, 20)
+
 
         # Rotation slider label
         rotate_label = QLabel(self)
@@ -100,12 +154,23 @@ class MainWindow(QMainWindow):
         self.rotate_slider.setTickPosition(QSlider.TicksBelow)
         self.rotate_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
         self.rotate_slider.setSingleStep(1)  # Each tick step is 1
+        self.rotate_slider.setValue(100)
+        self.rotate_slider.setMinimum(0)
+        self.rotate_slider.setMaximum(200)
+        self.rotate_slider.valueChanged.connect(self.glWidget.changeRotation)
+
 
         # Using addWidget to add labels and sliders to layout
+        #gui_layout.addWidget(planetlist)
         gui_layout.addWidget(size_label)
         gui_layout.addWidget(self.size_slider)
+
         gui_layout.addWidget(speed_label)
         gui_layout.addWidget(self.speed_slider)
+
+        gui_layout.addWidget(orbit_radius_label)
+        gui_layout.addWidget(self.orbit_radius_slider)
+
         gui_layout.addWidget(rotate_label)
         gui_layout.addWidget(self.rotate_slider)
 
@@ -122,8 +187,10 @@ class GLWidget(QGLWidget):
         self.timer.timeout.connect(self.update) # timer
         self.timer.start(16)
 
-        self.planet1 =Sphere("planet1", 2, 4, 2, 1)
+        self.planet1 =Sphere("planet1", 1, 4, 2, 1)
         self.planet2 = Sphere("planet2", 1.5, 8, 1, 1, 0)
+
+        self.selected_planet = self.planet1
 
     def initializeGL(self):
         self.qglClearColor(QColor(0, 0, 0))
@@ -167,17 +234,38 @@ class GLWidget(QGLWidget):
         # planet2 = Sphere("planet2", 1.5, 8, 1, 1, 0)
         self.planet2.render(elapsed_time)
 
+    def selectPlanet(self, planet_index):
+        if (planet_index >= 0) and (planet_index < len(Sphere.sphereList)):
+            self.selected_planet = Sphere.sphereList[planet_index]
+            # Update sliders to match selected planet's properties
+            self.parent.size_slider.setValue(int(self.selected_planet.radius * 100))
+            self.parent.speed_slider.setValue(int(self.selected_planet.orbit_speed * 100))
+            self.parent.rotate_slider.setValue(int(self.selected_planet.rotation * 100))
+            self.parent.orbit_radius_slider.setValue(int(self.selected_planet.orbit_radius * 100))
+        else:
+            print("ERROR: Planet index out of range")
+
+
     def changeSize(self, size):
-        self.planet1.radius = self.planet1.orig_rad * (size / 100) # Dividing by 100 to conform to coordinate system
+        self.selected_planet.radius = size / 100 # Dividing by 100 to conform to coordinate system
         self.update()
 
     def changeOrbit(self, orbit):
-        self.planet1.orbit_speed = self.planet1.orig_orbit_speed * (orbit / 100)
+        self.selected_planet.orbit_speed = orbit / 100
         self.update()
 
     def changeRotation(self, rotation):
-        self.planet1.rotation = rotation
+        self.selected_planet.rotation = rotation / 100
         self.update()
+
+    def changeOrbitRadius(self, radius):
+        #self.selected_planet.orbit_radius = self.selected_planet.orig_orbit_radius * (radius / 100)
+        self.selected_planet.orbit_radius = radius / 100
+        self.update()
+
+    #def removePlanet(self):
+        # remove planet code here
+
 
 
 if __name__ == '__main__':
