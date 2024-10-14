@@ -21,36 +21,46 @@ import random
 #   render_flag: Flag to determine if object gets rendered
 class Sphere:
     sphereList = []
+    asteroidBelt = []
 
-    def __init__(self, name, radius, orbit_radius, orbit_speed, rotation_speed, celestial_type=2):
+    def __init__(self, name, radius, orbit_radius, orbit_speed, rotation_speed, celestial_type=2, moons=0):
         self.name = name
         self.radius = radius
         self.orbit_radius = orbit_radius
         self.orbit_speed = orbit_speed
         self.rotation = rotation_speed
-
-        #self.moons = moons
-        Sphere.sphereList.append(self)
-        self.moons = []
-
+        self.moons = moons
         self.celestial_type = celestial_type
+
+        if celestial_type == 4:
+            Sphere.asteroidBelt.append(self)
+        else:
+            Sphere.sphereList.append(self)
 
         if celestial_type == 1:
             self.color_red = 1
             self.color_green = 0.8
             self.color_blue = 0
 
-        else:
+        elif celestial_type == 2 or celestial_type == 3:
             self.color_red = random.random()
             self.color_green = random.random()
             self.color_blue = random.random()
+
+        else:
+            self.color_red = random.uniform(0.20, 0.23)
+            self.color_green = random.uniform(0.20, 0.23)
+            self.color_blue = random.uniform(0.23, 0.25)
 
     # Function to render sphere based on attributes
     def render(self, time):
 
         glPushMatrix() # Pushing object matrix to be rendered
-        x_orbit = math.cos(time * self.orbit_speed) # orbit for x direction, uses time as baseline multiplied by a factor
-        y_orbit = math.sin(time * self.orbit_speed) # orbit for y direction, uses time as baseline multiplied by a facotr
+
+        # For loop to create variance in render position
+        for i in range(180):
+            x_orbit = math.cos((time + i) * self.orbit_speed) # orbit for x direction, uses time as baseline multiplied by a factor
+            y_orbit = math.sin((time + i) * self.orbit_speed) # orbit for y direction, uses time as baseline multiplied by a facotr
 
         if self.celestial_type == 3:
             x_orbit = x_orbit * 0.5
@@ -62,7 +72,23 @@ class Sphere:
         sphere = gluNewQuadric()
         gluSphere(sphere, self.radius, 32, 32) # Creating new sphere with set radius
 
+        # For loop that loops for number of moons to add to planet
+        for i in range(self.moons):
+            glPushMatrix()
+
+            moon_x_orbit = math.cos(time * self.orbit_speed * (i+1))
+            moon_y_orbit = math.sin(time * self.orbit_speed * (i+1))
+
+            # Multiplying x orbit by double planet radius plus i to prevent overlap between planet and moons
+            glTranslatef(moon_x_orbit * ((self.radius * 2) + i), moon_y_orbit * ((self.radius * 2) + i), 0)
+            glRotatef(time * 2, 0, 0, 1)  # Rotation function to rotation object, rotating along z-axis
+            glColor3f(0.8, 0.8, 0.8)
+            sphere = gluNewQuadric()
+            gluSphere(sphere, 0.2, 32, 32)  # Creating new sphere with set radius
+            glPopMatrix()
+
         glPopMatrix() # Popping matrix to allow for next
+
 
 
 # Class MainWindow
@@ -85,11 +111,16 @@ class MainWindow(QMainWindow):
         self.glWidget = GLWidget(self)
         gui_layout.addWidget(self.glWidget)
 
-        buttonlayout = QHBoxLayout()
-        addObjectLayout = QVBoxLayout()
+        # planetlist combobox label
+        combobox_label = QLabel(self)
+        combobox_label.setText("Object Selection:")
+        combobox_label.setFont(QFont("Arial", 10))
+        combobox_label.setFixedSize(200, 20)
 
+        # Combobox / dropdown box for object selection
         self.planetlist = QComboBox()
-        self.planetlist.addItems([planet.name for planet in Sphere.sphereList])
+        for planet in Sphere.sphereList:
+            self.planetlist.addItem(planet.name)
         self.planetlist.currentIndexChanged.connect(self.selectPlanet)
         self.planetlist.setFixedSize(200, 20)
 
@@ -103,6 +134,26 @@ class MainWindow(QMainWindow):
         addasteroid.setFixedSize(100, 20)
         addasteroid.clicked.connect(lambda: self.newPlanet(3))
 
+        # Label for moon spinbox
+        moonlabel = QLabel(self)
+        moonlabel.setText("Add Moons:")
+        moonlabel.setFont(QFont("Arial", 10))
+        moonlabel.setFixedSize(100, 20)
+
+        # Spinbox to add x number of moons to selected planet
+        self.moonbox = QSpinBox()
+        self.moonbox.setValue(0)
+        self.moonbox.setMinimum(0)
+        self.moonbox.setMaximum(3)
+        self.moonbox.setFixedSize(100, 20)
+        self.moonbox.valueChanged.connect(self.addMoons)
+
+        # textbox label
+        textbox_label = QLabel(self)
+        textbox_label.setText("Object Name:")
+        textbox_label.setFont(QFont("Arial", 10))
+        textbox_label.setFixedSize(100, 20)
+
         # Text box to enter name of planet to add
         self.textbox = QLineEdit(self)
         self.textbox.setFixedSize(100, 20)
@@ -112,22 +163,53 @@ class MainWindow(QMainWindow):
         removeplanet.setFixedSize(100, 20)
         removeplanet.clicked.connect(self.removePlanet)
 
-
         # Button to open color dialog box
         colorbutton = QPushButton("Choose Color")
         colorbutton.setFixedSize(100, 20)
-        colorbutton.clicked.connect(self.colorPicker)
+        colorbutton.clicked.connect(self.glWidget.colorPicker)
 
-        # Adding add planet and add asteroid buttons to a vertical layout
-        addObjectLayout.addWidget(addplanet)
-        addObjectLayout.addWidget(addasteroid)
+        # button to add asteroid belt
+        beltbutton = QPushButton("Add Belt")
+        beltbutton.setFixedSize(100, 20)
+        beltbutton.clicked.connect(self.asteroidBelt)
 
-        # Adding buttons and boxcombo to buttonlayout
-        buttonlayout.addWidget(self.planetlist)
-        buttonlayout.addWidget(self.textbox)
-        buttonlayout.addLayout(addObjectLayout)
-        buttonlayout.addWidget(removeplanet)
-        buttonlayout.addWidget(colorbutton)
+        # button to remove asteroid belt
+        removebeltbutton = QPushButton("Remove Belt")
+        removebeltbutton.setFixedSize(100, 20)
+        removebeltbutton.clicked.connect(self.removeBelt)
+
+        # Individual layouts
+        buttonlayout = QHBoxLayout()
+        firstColumn = QVBoxLayout()
+        secondColumn = QVBoxLayout()
+        thirdColumn = QVBoxLayout()
+        fourthColumn = QVBoxLayout()
+
+        # Adding combo box label and combo box to first column of button layout
+        firstColumn.addWidget(combobox_label)
+        firstColumn.addWidget(self.planetlist)
+
+        # Adding textbox label and textbox to second column of button layout
+        secondColumn.addWidget(textbox_label)
+        secondColumn.addWidget(self.textbox)
+        secondColumn.addWidget(moonlabel)
+        secondColumn.addWidget(self.moonbox)
+
+        # Adding the addplanet, addasteroid, and removeplanet buttons to third column of button layout
+        thirdColumn.addWidget(addplanet)
+        thirdColumn.addWidget(addasteroid)
+        thirdColumn.addWidget(removeplanet)
+
+        # Adding moon label, moon spinbox, and color button to fourth column
+        fourthColumn.addWidget(colorbutton)
+        fourthColumn.addWidget(beltbutton)
+        fourthColumn.addWidget(removebeltbutton)
+
+        # Adding all columns to button layout
+        buttonlayout.addLayout(firstColumn)
+        buttonlayout.addLayout(secondColumn)
+        buttonlayout.addLayout(thirdColumn)
+        buttonlayout.addLayout(fourthColumn)
 
         # Adding button layout to the main gui layout
         gui_layout.addLayout(buttonlayout)
@@ -147,7 +229,6 @@ class MainWindow(QMainWindow):
         self.size_slider.setMinimum(0)
         self.size_slider.setMaximum(300)
         self.size_slider.valueChanged.connect(self.glWidget.changeSize)
-
 
         # Speed slider label
         speed_label = QLabel(self)
@@ -212,6 +293,7 @@ class MainWindow(QMainWindow):
         gui_layout.addWidget(rotate_label)
         gui_layout.addWidget(self.rotate_slider)
 
+
     # selectPlanet function
     #
     # Function  called by combobox to select new planet for editing. Indexes through
@@ -268,22 +350,11 @@ class MainWindow(QMainWindow):
             print("SUCCESS: Planet " + planet_name + " is now added") # test if worked
 
 
-
-    @pyqtSlot()
-    def colorPicker(self):
-        self.openColorDialog()
-
-    def openColorDialog(self):
-        color = QColorDialog.getColor()
-
-        if color.isValid():
-            print(self.glWidget.selected_planet.name + " color : " + color.name()) # print object and its color to console
-            if self.glWidget.selected_planet:  # Ensure a planet is selected
-                # set the selected objects colors accordingly
-                self.glWidget.selected_planet.color_red = color.red() / 255.0 # dividing by 255 to get decimal within 0 and 1
-                self.glWidget.selected_planet.color_green = color.green() / 255.0
-                self.glWidget.selected_planet.color_blue = color.blue() / 255.0
-                self.glWidget.update()
+    # MainWindow class continued
+    def addMoons(self):
+        num_of_moons = self.moonbox.value()
+        self.glWidget.selected_planet.moons = num_of_moons
+        self.glWidget.update()
 
 
     # removePlanet function
@@ -315,6 +386,31 @@ class MainWindow(QMainWindow):
             print("ERROR: Planet with name (" + planet_name + ") does not exist.")
 
 
+    # asteroidBelt function
+    #
+    # Function to render asteroid belt to screen
+    # Function creates 200 spheres, each with random attributes to create
+    # variance between asteroids
+    # Spheres created here are not editable and not apart of main sphere list
+    def asteroidBelt(self):
+        for i in range(200):
+            radius = random.uniform(0.03, 0.1)
+            orbit_radius = random.uniform(5, 6)  # Random orbit radius between 4 and 6
+            orbit_speed = random.uniform(1, 1.2)  # Random orbit speed between 1 and 1.2
+            rotation_speed = random.uniform(0, 2)  # Random rotation speed
+            asteroid = Sphere(f"Asteroid_{i}", radius, orbit_radius, orbit_speed, rotation_speed, 4)
+
+        self.glWidget.update()
+
+
+    # removeBelt function
+    #
+    # Function clears the asteroidBelt list, removing from screen
+    def removeBelt(self):
+        Sphere.asteroidBelt.clear()
+        self.glWidget.update()
+
+
 class GLWidget(QGLWidget):
     def __init__(self, parent=None):
         self.parent = parent
@@ -325,14 +421,16 @@ class GLWidget(QGLWidget):
         self.elapsed_timer.start() # start timer
 
         self.timer.timeout.connect(self.update) # timer
-        self.timer.start(16)
+        self.timer.start()
 
         self.sun = Sphere("sun", 1.5, 0, 0, 1, 1)
-        self.asteroid = Sphere("ast", 0.1, 4, 2, 1, 3)
+        #self.asteroid = Sphere("ast", 0.1, 4, 2, 1, 3)
+        #self.planet1 = Sphere("planet1", 1, 5, 1, 1, 2, 1)
         #self.planet1 =Sphere("planet1", 1, 4, 2, 1)
         #self.planet2 = Sphere("planet2", 1.5, 8, 1, 1)
 
         self.selected_planet = self.sun
+
 
     def initializeGL(self):
         self.qglClearColor(QColor(0, 0, 0))
@@ -360,23 +458,15 @@ class GLWidget(QGLWidget):
         elapsed_time = self.elapsed_timer.elapsed() / 1000.0 # timer to provide for render function
 
         # Sun
-        #glColor3f(1, 0.8, 0)
-        #sun = Sphere("sun", 1.5, 0, 0, 1)  # (self, name, radius, orbit_radius, orbit_speed, rotation_speed)
         self.sun.render(elapsed_time)
-        self.asteroid.render(elapsed_time)
 
-        # Planet 1
-        # glColor3f(0, 0, 1)
-        # planet1 = Sphere("planet1", 1.0, 4, 2, 1, 1)
-        # self.planet1.render(elapsed_time)
-
-        # Planet 2
-        # glColor3f(0, 1, 0)
-        # planet2 = Sphere("planet2", 1.5, 8, 1, 1, 0)
-        # self.planet2.render(elapsed_time)
-
+        # Loop to render all items in sphereList list
         for planet in Sphere.sphereList:
             planet.render(elapsed_time)
+
+        # Loop to render all asteroids in asteroidbelt list
+        for asteroid in Sphere.asteroidBelt:
+           asteroid.render(elapsed_time)
 
     # changeSize function
     #
@@ -387,6 +477,7 @@ class GLWidget(QGLWidget):
         self.selected_planet.radius = size / 100 # Dividing by 100 to conform to coordinate system
         self.update()
 
+
     # changeOrbit function
     #
     # Function to modify a planet's orbit speed
@@ -396,6 +487,7 @@ class GLWidget(QGLWidget):
         self.selected_planet.orbit_speed = orbit / 100
         self.update()
 
+
     # changeRotation function
     #
     # Function to modify a planet's rotaional speed
@@ -404,6 +496,7 @@ class GLWidget(QGLWidget):
     def changeRotation(self, rotation):
         self.selected_planet.rotation = rotation / 100
         self.update()
+
 
     # changeOrbitRadius function
     #
@@ -416,9 +509,27 @@ class GLWidget(QGLWidget):
         self.update()
 
 
-    #def removePlanet(self):
-        # remove planet code here
+    # colorPicker function
+    #
+    # Used to open color dialog box upon button press
+    def colorPicker(self):
+        self.openColorDialog()
 
+
+    # openColorDialog function
+    #
+    # Function to open PyQt color dialog box and apply colors to selected object
+    def openColorDialog(self):
+        color = QColorDialog.getColor()
+
+        if color.isValid():
+            print(self.selected_planet.name + " color : " + color.name()) # print object and its color to console
+            if self.selected_planet:  # Ensure a planet is selected
+                # set the selected objects colors accordingly
+                self.selected_planet.color_red = color.red() / 255.0 # dividing by 255 to get decimal within 0 and 1
+                self.selected_planet.color_green = color.green() / 255.0
+                self.selected_planet.color_blue = color.blue() / 255.0
+                self.update()
 
 
 if __name__ == '__main__':
