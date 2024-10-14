@@ -5,7 +5,6 @@ from PyQt5.QtOpenGL import *
 from PyQt5.QtWidgets import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import sys
 import math
 import random
 
@@ -77,11 +76,11 @@ class Sphere:
         for i in range(self.moons):
             glPushMatrix()
 
-            moon_x_orbit = math.cos(time * self.orbit_speed * (i+1))
-            moon_y_orbit = math.sin(time * self.orbit_speed * (i+1))
+            moon_x_orbit = math.cos(time * (self.orbit_speed * (i+1) * 4))
+            moon_y_orbit = math.sin(time * (self.orbit_speed * (i+1) * 4))
 
             # Multiplying x orbit by double planet radius plus i to prevent overlap between planet and moons
-            glTranslatef(moon_x_orbit * ((self.radius * 2) + i), moon_y_orbit * ((self.radius * 2) + i), 0)
+            glTranslatef(moon_x_orbit * ((self.radius * 4) + i), moon_y_orbit * ((self.radius * 4) + i), 0)
             glRotatef(time * 2, 0, 0, 1)  # Rotation function to rotation object, rotating along z-axis
             glColor3f(0.8, 0.8, 0.8)
             sphere = gluNewQuadric()
@@ -93,7 +92,8 @@ class Sphere:
 
 
 # Class MainWindow
-# Used to initialize PyQt window and all renderings within
+#
+# Used to initialize PyQt window and all object rendering
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -217,7 +217,7 @@ class MainWindow(QMainWindow):
 
         # Size slider label
         size_label = QLabel(self)
-        size_label.setText("Adjust Size:")
+        size_label.setText("Adjust Radius Size:")
         size_label.setFont(QFont("Arial", 11))
         size_label.setFixedSize(200, 20)
 
@@ -233,15 +233,15 @@ class MainWindow(QMainWindow):
 
         # Speed slider label
         speed_label = QLabel(self)
-        speed_label.setText("Adjust Speed:")
+        speed_label.setText("Adjust Orbit Speed:")
         speed_label.setFont(QFont("Arial", 11))
         speed_label.setFixedSize(200, 20)
 
         # Speed slider creation
         self.speed_slider = QSlider(Qt.Horizontal, self)
         self.speed_slider.setTickPosition(QSlider.TicksBelow)
-        self.speed_slider.setTickInterval(1000)  # Setting slider to have interval of every 10 ticks
-        self.speed_slider.setSingleStep(1)  # Each tick step is 1
+        self.speed_slider.setTickInterval(1000)  
+        self.speed_slider.setSingleStep(1) 
         self.speed_slider.setValue(0)
         self.speed_slider.setMinimum(-10000)
         self.speed_slider.setMaximum(10000)
@@ -249,15 +249,15 @@ class MainWindow(QMainWindow):
 
         # Orbit size slider label
         orbit_radius_label = QLabel(self)
-        orbit_radius_label.setText("Adjust Orbit:")
+        orbit_radius_label.setText("Adjust Orbit Radius:")
         orbit_radius_label.setFont(QFont("Arial", 11))
         orbit_radius_label.setFixedSize(200, 20)
 
         # Orbit size slider creation
         self.orbit_radius_slider = QSlider(Qt.Horizontal, self)
         self.orbit_radius_slider.setTickPosition(QSlider.TicksBelow)
-        self.orbit_radius_slider.setTickInterval(100)  # Setting slider to have interval of every 10 ticks
-        self.orbit_radius_slider.setSingleStep(1)  # Each tick step is 1
+        self.orbit_radius_slider.setTickInterval(100)  
+        self.orbit_radius_slider.setSingleStep(1)  
         self.orbit_radius_slider.setValue(0)
         self.orbit_radius_slider.setMinimum(0)
         self.orbit_radius_slider.setMaximum(800)
@@ -265,15 +265,15 @@ class MainWindow(QMainWindow):
 
         # Rotation slider label
         rotate_label = QLabel(self)
-        rotate_label.setText("Adjust Rotation:")
+        rotate_label.setText("Adjust Rotation Speed:")
         rotate_label.setFont(QFont("Arial", 11))
         rotate_label.setFixedSize(200, 20)
 
         # Rotation slider creation
         self.rotate_slider = QSlider(Qt.Horizontal, self)
         self.rotate_slider.setTickPosition(QSlider.TicksBelow)
-        self.rotate_slider.setTickInterval(10)  # Setting slider to have interval of every 10 ticks
-        self.rotate_slider.setSingleStep(1)  # Each tick step is 1
+        self.rotate_slider.setTickInterval(10) 
+        self.rotate_slider.setSingleStep(1)  
         self.rotate_slider.setValue(100)
         self.rotate_slider.setMinimum(0)
         self.rotate_slider.setMaximum(200)
@@ -424,7 +424,7 @@ class GLWidget(QGLWidget):
         self.timer.timeout.connect(self.update) # timer
         self.timer.start()
 
-        self.sun = Sphere("sun", 1.5, 0, 0, 1, 1)
+        self.sun = Sphere("Sun", 1.5, 0, 0, 1, 1)
         #self.asteroid = Sphere("ast", 0.1, 4, 2, 1, 3)
         #self.planet1 = Sphere("planet1", 1, 5, 1, 1, 2, 1)
         #self.planet1 =Sphere("planet1", 1, 4, 2, 1)
@@ -444,7 +444,7 @@ class GLWidget(QGLWidget):
         glLoadIdentity()
         aspect = width / float(height)
 
-        gluPerspective(50.0, aspect, 1.0, 100.0)  # (field of view, aspect ratio, z near, z far)
+        gluPerspective(50.0, aspect, 1.0, 100.0)
         glMatrixMode(GL_MODELVIEW)
 
 
@@ -453,7 +453,7 @@ class GLWidget(QGLWidget):
 
         glLoadIdentity()
 
-        # Camera setup
+        # Camera view setup
         gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
         elapsed_time = self.elapsed_timer.elapsed() / 1000.0 # timer to provide for render function
@@ -468,6 +468,7 @@ class GLWidget(QGLWidget):
         # Loop to render all asteroids in asteroidbelt list
         for asteroid in Sphere.asteroidBelt:
            asteroid.render(elapsed_time)
+
 
     # changeSize function
     #
