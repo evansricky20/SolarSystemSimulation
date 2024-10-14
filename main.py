@@ -68,9 +68,10 @@ class Sphere:
 
         glTranslatef(x_orbit * self.orbit_radius, y_orbit * self.orbit_radius, 0) # Translate function incorporating x and y orbit multiplied by radius size
         glRotatef(time * self.rotation, 0, 0, 1) # Rotation function to rotation object, rotating along z-axis
+        glScalef(self.radius, self.radius, self.radius)
         glColor3f(self.color_red, self.color_green, self.color_blue)
         sphere = gluNewQuadric()
-        gluSphere(sphere, self.radius, 32, 32) # Creating new sphere with set radius
+        gluSphere(sphere, 1.0, 32, 32) # Creating new sphere with set radius
 
         # For loop that loops for number of moons to add to planet
         for i in range(self.moons):
