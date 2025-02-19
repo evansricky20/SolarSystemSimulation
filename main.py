@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.resize(800, 900)
-        self.setWindowTitle("Computer Graphics - Project 1")
+        self.setWindowTitle("Solar System Simulation")
 
         self.initGUI()
 
