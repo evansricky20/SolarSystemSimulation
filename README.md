@@ -3,16 +3,15 @@ This document is the user manual for my submission for the star system project. 
 
 <h2>SET UP</h2>
 This program requires you to have a recent version of Python, at least version 3.10.11 installed on your system. In addition to this, multiple libraries are used. You must have the PyQt5, OpenGL.GL, OpenGL.GLU, sys, math, and random libraries installed. Specific imports are as follows:
-1.	import sys
-2.	from PyQt5.QtCore import *
-3.	from PyQt5.QtGui import *
-4.	from PyQt5.QtOpenGL import *
-5.	from PyQt5.QtWidgets import *
-6.	from OpenGL.GL import *
-7.	from OpenGL.GLU import *
-8.	import math
-9.	import random
-It is up to you the user in choosing an IDE. This program was developed and tested using the PyCharm IDE. 
+<br/>1.	import sys
+<br/>2.	from PyQt5.QtCore import *
+<br/>3.	from PyQt5.QtGui import *
+<br/>4.	from PyQt5.QtOpenGL import *
+<br/>5.	from PyQt5.QtWidgets import *
+<br/>6.	from OpenGL.GL import *
+<br/>7.	from OpenGL.GLU import *
+<br/>8.	import math
+<br/>9.	import random
 
 <h2>USER INTERFACE</h2>
 With the program running and the main window launched, you should be presented with a window titled “Solar System Simulation”. It is here where all will take place. If all is running as it should, the OpenGL window should contain a single yellow sphere. This is the star of your system. It is the basis in which all objects will rotate around. Below the OpenGL window will be the user interface. It is here where you will interact with the star system. 
