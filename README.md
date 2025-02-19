@@ -15,7 +15,7 @@ This program requires you to have a recent version of Python, at least version 3
 It is up to you the user in choosing an IDE. This program was developed and tested using the PyCharm IDE. 
 
 <h2>USER INTERFACE</h2>
-With the program running and the main window launched, you should be presented with a window titled “Computer Graphics - Project 1”. It is here where all will take place. If all is running as it should, the OpenGL window should contain a single yellow sphere. This is the star of your system. It is the basis in which all objects will rotate around. Below the OpenGL window will be the user interface. It is here where you will interact with the star system. 
+With the program running and the main window launched, you should be presented with a window titled “Solar System Simulation”. It is here where all will take place. If all is running as it should, the OpenGL window should contain a single yellow sphere. This is the star of your system. It is the basis in which all objects will rotate around. Below the OpenGL window will be the user interface. It is here where you will interact with the star system. 
 
 <h3>Object Selection</h3>
 Starting at the top left, you will see a label that says “Object Selection”. Below it is the object selection drop down box. Clicking on it will display all currently rendered objects in the system. Since only the sun is rendered, the dropdown should only contain one object named “Sun”. With the creation of planets and asteroids, the dropdown box will be filled with their names. The names of these objects are up to you.
